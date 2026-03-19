@@ -9,6 +9,8 @@ import (
 
 func startRepl() {
 	scanner := bufio.NewScanner(os.Stdin)
+	cfg := config{}
+	cfgPtr := &cfg
 	for {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
@@ -20,7 +22,7 @@ func startRepl() {
 
 		val, ok := getCommands()[text[0]]
 		if ok {
-			err := val.callback()
+			err := val.callback(cfgPtr)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -37,7 +39,22 @@ func startRepl() {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*config) error
+}
+
+type config struct {
+	nextLocationsURL *string
+	prevLocationsURL *string
+}
+
+type Response struct {
+	Count    int     `json:"count"`
+	Next     *string `json:"next"`
+	Previous *string `json:"previous"`
+	Results  []struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"results"`
 }
 
 func getCommands() map[string]cliCommand {
@@ -51,6 +68,16 @@ func getCommands() map[string]cliCommand {
 			name:        "help",
 			description: "Displays a help message",
 			callback:    commandHelp,
+		},
+		"map": {
+			name:        "map",
+			description: "shows the next 20 poke place maps (mapb to go back)",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "shows the previous 20 poke place maps (mapb to go back)",
+			callback:    commandMapB,
 		},
 	}
 }
